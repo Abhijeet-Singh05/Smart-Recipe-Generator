@@ -34,4 +34,3 @@ DB_NAME=chef_db
 
 3. Install dependencies: `pip install -r requirements.txt`
 
-4. Run server: `python main.py`
