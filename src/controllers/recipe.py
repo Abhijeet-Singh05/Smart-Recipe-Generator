@@ -1,6 +1,7 @@
 from fastapi import UploadFile
 from datetime import datetime
 
+from src.services.ai_service import generate_recipe
 from src.services.cloudinary import upload_to_cloud
 
 from src.databse import get_db
@@ -39,9 +40,9 @@ async def process_recipe_request(file: UploadFile):
         raise apiError(500,"failed to upload")
 
     # Call AI
-    # recipe_data = await generate_recipe(file_content,file.content_type)
-    # if not recipe_data:
-    #     raise apiError(500,"geimin failed to response")
+    recipe_data = await generate_recipe(file_content,file.content_type)
+    if not recipe_data:
+        raise apiError(500,"geimin failed to response")
 
     # write to mongoDB
     try:
