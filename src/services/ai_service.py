@@ -1,10 +1,10 @@
 import json
 from google import genai
 from google.genai import types
-from src.config import config
+from src.config import Config
 from src.utils.api_error import apiError
 
-client = genai.Client(api_key=config.GEMINI_API_KEY)
+client = genai.Client(api_key=Config.GEMINI_API_KEY)
 
 def generate_recipe(file_bytes,mime_types):
     """

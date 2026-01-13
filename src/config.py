@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # to load .env file
-load_dotenv
+load_dotenv()
 
 # to assign values here globally so that all files can you them
 # these all are constant values
@@ -17,7 +17,8 @@ class Config:
    CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
    CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
- 
+   
+    
 
 
 config = Config()

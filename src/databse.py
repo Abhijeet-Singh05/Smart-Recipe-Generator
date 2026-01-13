@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from src.config import config
+from src.config import Config
 from src.utils.api_error import apiError
 import sys
 
@@ -18,9 +18,9 @@ def connect_to_mongo():
 
     try: 
         # create the client
-        db_client = MongoClient(config.MONGO_URI)
+        db_client = MongoClient(Config.MONGO_URI)
         
-        db = db_client[config.DB_NAME]
+        db = db_client[Config.DB_NAME]
 
         print(f"Successfully connected to database")
 
