@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefAI - Smart Recipe Generator</title>
+    <style>
+        /* --- CSS STYLES --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { color: #2c3e50; }
+        
+        /* Upload Section */
+        .upload-box {
+            border: 2px dashed #3498db;
+            padding: 40px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-box:hover { background-color: #eaf6fd; }
+        input[type="file"] { display: none; }
+        .btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover { background-color: #219150; }
+        .btn:disabled { background-color: #95a5a6; cursor: not-allowed; }
+
+        /* Loading Spinner */
+        #loading { display: none; color: #7f8c8d; margin-top: 20px; }
+
+        /* Result Section */
+        #result { display: none; text-align: left; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        #food-image { width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px; margin-bottom: 20px; }
+        .meta-tags { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tag { background: #eee; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
+        
+        .ingredients-list, .instructions-list { margin-bottom: 20px; }
+        li { margin-bottom: 5px; }
+
+        /* Error Message */
+        .error { color: #e74c3c; font-weight: bold; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🍳 ChefAI Recipe Generator</h1>
+        <p>Upload a photo of any food, and I'll tell you how to cook it!</p>
+
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <p id="fileName">Click to Select Image</p>
+            <input type="file" id="fileInput" accept="image/*" onchange="updateFileName()">
+        </div>
+        
+        <button id="generateBtn" class="btn" onclick="generateRecipe()">Generate Recipe</button>
+
+        <div id="loading">
+            <h3>⏳ Analyzing food... (This may take 10-20 seconds)</h3>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+
+        <div id="result">
+            <img id="food-image" src="" alt="Food Image">
+            
+            <h2 id="recipe-title">Title goes here</h2>
+            
+            <div class="meta-tags">
+                <span class="tag">⏱️ <span id="time"></span></span>
+                <span class="tag">🔥 <span id="difficulty"></span></span>
+            </div>
+
+            <h3>🛒 Ingredients</h3>
+            <ul id="ingredients-list" class="ingredients-list"></ul>
+
+            <h3>👨‍🍳 Instructions</h3>
+            <ol id="instructions-list" class="instructions-list"></ol>
+
+            <a id="youtube-link" href="#" target="_blank" class="btn" style="background-color: #c4302b; display: inline-block; text-decoration: none;">
+                📺 Watch on YouTube
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // 1. Helper to show file name when selected
+        function updateFileName() {
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileName');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = "Selected: " + fileInput.files[0].name;
+            }
+        }
+
+        // 2. Main Logic
+        async function generateRecipe() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            // UI Elements
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('errorMessage');
+            const btn = document.getElementById('generateBtn');
+
+            // Reset UI
+            errorDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+
+            if (!file) {
+                alert("Please select an image first!");
+                return;
+            }
+
+            // Show Loading
+            loading.style.display = 'block';
+            btn.disabled = true;
+
+            // Prepare Data
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // --- CALL BACKEND API ---
+                const response = await fetch('http://127.0.0.1:8000/analyze-food', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const jsonResponse = await response.json();
+
+                // --- HANDLE RESPONSE ---
+                if (jsonResponse.status === 'success') {
+                    // Success: Extract data
+                    // Note: We access .data because of our ApiResponse wrapper!
+                    const { image_url, recipe } = jsonResponse.data;
+
+                    // Fill UI
+                    document.getElementById('food-image').src = image_url;
+                    document.getElementById('recipe-title').innerText = recipe.title;
+                    document.getElementById('time').innerText = recipe.time;
+                    document.getElementById('difficulty').innerText = recipe.difficulty;
+                    document.getElementById('youtube-link').href = recipe.youtube_url;
+
+                    // Clear and Fill Lists
+                    const ingList = document.getElementById('ingredients-list');
+                    const instList = document.getElementById('instructions-list');
+                    ingList.innerHTML = '';
+                    instList.innerHTML = '';
+
+                    recipe.ingredients.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        ingList.appendChild(li);
+                    });
+
+                    recipe.instructions.forEach(step => {
+                        const li = document.createElement('li');
+                        li.textContent = step;
+                        instList.appendChild(li);
+                    });
+
+                    // Show Result
+                    resultDiv.style.display = 'block';
+                } else {
+                    // Error from Backend (Validation, etc.)
+                    throw new Error(jsonResponse.message || "Unknown error occurred");
+                }
+
+            } catch (error) {
+                // Network or Logic Error
+                errorDiv.innerText = "❌ Error: " + error.message;
+                errorDiv.style.display = 'block';
+                console.error(error);
+            } finally {
+                // Reset Loading State
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
